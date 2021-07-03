@@ -18,7 +18,7 @@ export interface UniqueVersion {
 }
 
 // Generate a unique version
-export function generate(options: UniqueVersionOptions): UniqueVersion {
+export function generate(options?: UniqueVersionOptions): UniqueVersion {
   const defaults: UniqueVersionOptions = {
     input: 'package.json', // Read the package.json file
     type: 'file', // Default read the file
@@ -51,12 +51,21 @@ export function generate(options: UniqueVersionOptions): UniqueVersion {
   let version = '';
 
   if(options.type === 'file') {
-    // Try to read the JSON file
-    const appPackage = JSON.parse(readFileSync(options.input).toString());
+    try {
+      // Try to read the JSON file
+      const appPackage = JSON.parse(readFileSync(options.input).toString());
 
-    version = appPackage.version;
+      version = appPackage.version;
+    } catch(error) { // Not a valid JSON
+      return ret;
+    }
   } else if(options.type === 'string') {
     version = options.input;
+  }
+
+  // Not a string
+  if(typeof version !== 'string') {
+    return ret;
   }
 
   // Generate the components

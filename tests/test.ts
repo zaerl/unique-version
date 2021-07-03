@@ -1,5 +1,7 @@
 /// <reference types="node" />
-import { generate, UniqueVersionOptions } from '../src/index';
+import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
+import { generate, UniqueVersion, UniqueVersionOptions } from '../src/index';
 
 // This is a very simple list of tests
 let runTests = 0;
@@ -12,11 +14,7 @@ const test1 = generateSection('Empty string', {
 });
 
 mustBeDefined(test1);
-mustBeNull(test1.full);
-mustBeNull(test1.major);
-mustBeNull(test1.minor);
-mustBeNull(test1.patch);
-mustBeNull(test1.hash);
+mustAllBeNull(test1);
 
 const test2 = generateSection('1-digits version', {
   input: '1',
@@ -90,10 +88,7 @@ const test8 = generateSection('41-digits hash', {
 });
 
 mustBeDefined(test8);
-mustBeNull(test8.full);
-mustBeNull(test8.major);
-mustBeNull(test8.minor);
-mustBeNull(test8.patch);
+mustAllBeNull(test8);
 
 const test9 = generateSection('No digits hash', {
   input: '1.0.0',
@@ -102,10 +97,7 @@ const test9 = generateSection('No digits hash', {
 });
 
 mustBeDefined(test9);
-mustBeNull(test9.full);
-mustBeNull(test9.major);
-mustBeNull(test9.minor);
-mustBeNull(test9.patch);
+mustAllBeNull(test9);
 
 const test10 = generateSection('No git hash', {
   input: '1.0.0',
@@ -120,6 +112,45 @@ mustBe(test10.minor, '0');
 mustBe(test10.patch, '0');
 mustRegexBe(test10.hash, '[a-f0-9]{7}');
 mustBe((test10.full)?.split('-')[1], test10?.hash);
+
+const test11 = generateSection('Simple package.json', {
+  input: './tests/simple.json'
+});
+
+mustBeDefined(test11);
+mustAllBe(test11, test4); // 3-digits git
+
+const test12 = generateSection('Empty package.json', {
+  input: './tests/empty.json'
+});
+
+mustBeDefined(test12);
+mustAllBeNull(test12);
+
+const test13 = generateSection('Not a JSON', {
+  input: './tests/not-json.txt'
+});
+
+mustBeDefined(test13);
+mustAllBeNull(test13);
+
+const test14 = generateSection('Not a file', {
+  input: './not-a-file'
+});
+
+mustBeDefined(test14);
+mustAllBeNull(test14);
+
+const test15 = generateSection('All defaults');
+
+// Library package.json file
+const appPackage = JSON.parse(readFileSync('package.json').toString());
+const components: string[] = appPackage.version.split('.');
+
+mustBeDefined(test15);
+mustBe(test15.major, components[0]);
+mustBe(test15.minor, components[1]);
+mustBe(test15.patch, components[2]);
 
 // Summary
 output(validTests === runTests, `\nTests: ${validTests}/${runTests}`);
@@ -145,6 +176,22 @@ function mustRegexBe(arg: any, expression: string, not = false) {
   return tests(regex.test(arg), not, `Must regex "${expression}"${not ? ' not' : ''} be valid`);
 }
 
+function mustAllBe(unique1: UniqueVersion, unique2: UniqueVersion) {
+  mustBe(unique1.full, unique1.full);
+  mustBe(unique1.major, unique1.major);
+  mustBe(unique1.minor, unique1.minor);
+  mustBe(unique1.patch, unique1.patch);
+  return mustBe(unique1.hash, unique1.hash);
+}
+
+function mustAllBeNull(unique: UniqueVersion) {
+  mustBeNull(unique.full);
+  mustBeNull(unique.major);
+  mustBeNull(unique.minor);
+  mustBeNull(unique.patch);
+  return mustBeNull(unique.hash);
+}
+
 function tests(valid: boolean, not = false, message: string) {
   ++runTests;
   const validity = not ? !valid : valid;
@@ -166,7 +213,7 @@ function output(valid: boolean, message: string) {
   }
 }
 
-function generateSection(name: string, options: UniqueVersionOptions) {
+function generateSection(name: string, options?: UniqueVersionOptions) {
   if(sections > 0) { // Put an empty line after first section
     console.log();
   }
