@@ -1,5 +1,4 @@
 /// <reference types="node" />
-import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { generate, UniqueVersion, UniqueVersionOptions } from '../src/index';
 

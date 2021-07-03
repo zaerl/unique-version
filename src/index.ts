@@ -5,7 +5,6 @@ export interface UniqueVersionOptions {
   input: string;
   type?: 'file' | 'string';
   hashSize?: number;
-  hash?: string;
   git?: boolean;
 }
 
