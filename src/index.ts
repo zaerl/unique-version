@@ -10,15 +10,15 @@ export interface UniqueVersionOptions {
 }
 
 export interface UniqueVersion {
-  full: string;
-  major: string;
-  minor: string;
-  patch: string;
-  hash: string;
+  full: string | null;
+  major: string | null;
+  minor: string | null;
+  patch: string | null;
+  hash: string | null;
 }
 
 // Generate a unique version
-export function generate(options: UniqueVersionOptions): UniqueVersion | undefined {
+export function generate(options: UniqueVersionOptions): UniqueVersion {
   const defaults: UniqueVersionOptions = {
     input: 'package.json', // Read the package.json file
     type: 'file', // Default read the file
@@ -26,13 +26,26 @@ export function generate(options: UniqueVersionOptions): UniqueVersion | undefin
     git: true // Use git for generating the hash
   };
 
+  const ret: UniqueVersion = {
+    full: null,
+    major: null,
+    minor: null,
+    patch: null,
+    hash: null
+  }
+
   options = {
     ...defaults,
     ...options
   };
 
   if(options.input === '') {
-    return;
+    return ret;
+  }
+
+  if(typeof options.hashSize === 'undefined' || options.hashSize <= 0 ||
+    options.hashSize > 40) {
+    return ret;
   }
 
   let version = '';
@@ -43,7 +56,7 @@ export function generate(options: UniqueVersionOptions): UniqueVersion | undefin
 
     version = appPackage.version;
   } else if(options.type === 'string') {
-    version = options.type;
+    version = options.input;
   }
 
   // Generate the components
@@ -52,23 +65,32 @@ export function generate(options: UniqueVersionOptions): UniqueVersion | undefin
   components[1] = typeof components[1] !== 'undefined' ? components[1] : '',
   components[2] = typeof components[2] !== 'undefined' ? components[2] : ''
 
-  const ret = {
-    full: version,
-    hash: '',
-    major: components[0],
-    minor: components[1],
-    patch: components[2]
-  };
+  ret.full = version;
+  ret.major = components[0];
+  ret.minor = components[1];
+  ret.patch = components[2];
+  ret.hash = '';
 
   try {
-    // Call git
-    let hash = execSync('git rev-parse HEAD', { stdio: 'ignore' }).toString();
-    hash = hash.substr(0, options.hashSize);
+    let hash = '';
+
+    if(options.git) {
+      // Call git
+      hash = execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
+      hash = hash.substr(0, options.hashSize);
+    } else {
+      // Generate a random string
+      const characters = 'abcdef0123456789';
+
+      for(let i = 0; i < options.hashSize; ++i) {
+        hash += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+    }
 
     ret.full = `${version}-${hash}`;
+    ret.hash = hash;
   } catch(error) {
-    console.log(error);
-    return;
+    return ret;
   }
 
   return ret;
