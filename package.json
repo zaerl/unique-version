@@ -17,10 +17,10 @@
     "url": "git+https://github.com/zaerl/unique-version.git"
   },
   "keywords": [
-    "javascript",
-    "package.json",
-    "version",
-    "git"
+    "git",
+    "random-string",
+    "unique-version",
+    "version"
   ],
   "author": "Francesco Bigiarini <francesco.bigiarini@gmail.com>",
   "license": "MIT",

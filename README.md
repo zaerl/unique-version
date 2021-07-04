@@ -30,7 +30,7 @@ console.log(version);
 */
 ```
 
-The `HASH` is calculated using `git rev-parse HEAD` otherwise from a random value.
+The `HASH` is calculated using `git rev-parse HEAD` otherwise is a random value.
 
 Defaults:
 
